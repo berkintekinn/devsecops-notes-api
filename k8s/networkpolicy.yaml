@@ -1,0 +1,23 @@
+# default deny, then only allow inbound traffic to the api port and no egress at all
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny
+  namespace: notes
+spec:
+  podSelector: {}
+  policyTypes: [Ingress, Egress]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: notes-api-ingress
+  namespace: notes
+spec:
+  podSelector:
+    matchLabels:
+      app: notes-api
+  policyTypes: [Ingress]
+  ingress:
+    - ports:
+        - port: 8080

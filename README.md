@@ -15,7 +15,11 @@ push / PR
      image       build → trivy image scan → push to ghcr (main only)
         │
         ▼
+  deploy-kind    throwaway k8s cluster: deploy → service smoke test → PSA check
+        │
+        ▼
      deploy      copy the scanned digest to Artifact Registry → Cloud Run → /health smoke test
+                 (main only, skipped until GCP is configured)
 ```
 
 Gates fail the build on HIGH/CRITICAL findings that have a fix available. Every scanner uploads SARIF, so all findings show up under Security > Code scanning.
@@ -33,6 +37,26 @@ Gates fail the build on HIGH/CRITICAL findings that have a fix available. Every 
 ### What the gates caught on the first run
 
 The first image scan failed on a HIGH in Debian's `libpcre2` and on outdated `urllib3`, `msgpack` and `setuptools` that were vendored inside the base image's pip. None of them were in my own dependencies, which is exactly why the image scan exists in addition to the dependency scan. Fixed by upgrading OS packages and removing pip from the runtime stage.
+
+## Kubernetes
+
+Every run (PRs included) spins up a [kind](https://kind.sigs.k8s.io/) cluster inside the runner, loads the image that was just scanned and deploys `k8s/` to it. It costs nothing and catches broken manifests before anything real is touched.
+
+The manifests are locked down:
+
+- namespace enforces the `restricted` Pod Security Standard, so the API server itself rejects non-compliant pods. The pipeline verifies this by trying to create a privileged pod and expecting it to be refused.
+- non-root, read-only root filesystem, all capabilities dropped, no privilege escalation, `RuntimeDefault` seccomp
+- no service account token mounted (the app never talks to the k8s API)
+- CPU/memory requests and limits, readiness and liveness probes
+- NetworkPolicy: default deny for both directions, then only inbound on 8080. The app has no reason to make outbound calls.
+
+Trivy's misconfig scanner checks these files as part of the `trivy-fs` gate.
+
+```bash
+kind create cluster
+docker build -t notes-api:ci . && kind load docker-image notes-api:ci
+kubectl apply -k k8s/
+```
 
 ## Custom Semgrep rules
 
