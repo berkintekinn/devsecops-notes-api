@@ -24,6 +24,8 @@ push / PR
 
 Gates fail the build on HIGH/CRITICAL findings that have a fix available. Every scanner uploads SARIF, so all findings show up under Security > Code scanning.
 
+**See it fail:** [PR #1](https://github.com/berkintekinn/devsecops-notes-api/pull/1) is an intentionally insecure change that's kept open. It adds a hardcoded token, a `verify=False` call and `PyYAML==5.3` (CVE-2020-14343, critical). Tests pass, but gitleaks, Semgrep and Trivy each block it, so nothing gets built or deployed.
+
 ## Design decisions
 
 - **Actions are pinned to commit SHAs.** Tags can be moved (see the tj-actions/changed-files incident), SHAs can't. Dependabot keeps them up to date.
