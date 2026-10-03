@@ -56,8 +56,7 @@ def delete_note(note_id: int):
             raise HTTPException(status_code=404, detail="note not found")
 
 
-import requests
-
-
 def notify(url):
+    import requests
+
     requests.post(url, verify=False)
