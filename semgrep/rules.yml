@@ -1,0 +1,28 @@
+rules:
+  - id: no-eval-exec
+    languages: [python]
+    severity: ERROR
+    message: eval/exec on runtime data is remote code execution waiting to happen
+    pattern-either:
+      - pattern: eval(...)
+      - pattern: exec(...)
+
+  - id: subprocess-shell-true
+    languages: [python]
+    severity: ERROR
+    message: shell=True with dynamic input allows command injection
+    pattern: subprocess.$FUNC(..., shell=True, ...)
+
+  - id: requests-verify-false
+    languages: [python]
+    severity: ERROR
+    message: TLS verification disabled
+    pattern: requests.$METHOD(..., verify=False, ...)
+
+  - id: uvicorn-debug-reload
+    languages: [python]
+    severity: WARNING
+    message: reload/debug mode should not ship to production
+    pattern-either:
+      - pattern: uvicorn.run(..., reload=True, ...)
+      - pattern: uvicorn.run(..., debug=True, ...)
