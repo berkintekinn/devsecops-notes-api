@@ -54,3 +54,9 @@ def delete_note(note_id: int):
     with _lock:
         if _notes.pop(note_id, None) is None:
             raise HTTPException(status_code=404, detail="note not found")
+
+
+def notify(url):
+    import requests
+
+    requests.post(url, verify=False)
